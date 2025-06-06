@@ -8,6 +8,9 @@
 import UIKit
 
 class HomeHeaderView: UIView {
+    
+    // MARK: - Variable
+    weak var delegate: HomeHeaderViewDelegate?
         
     
     // MARK: - UI Component
@@ -28,6 +31,7 @@ class HomeHeaderView: UIView {
         layer.maskedCorners = [.layerMinXMaxYCorner, .layerMaxXMaxYCorner]
         
         setupUI()
+        setupGesture()
         
     }
     
@@ -44,7 +48,7 @@ class HomeHeaderView: UIView {
         profileImageView.tintColor = .label
         profileImageView.layer.cornerRadius = 12
         profileImageView.clipsToBounds = true
-        
+        profileImageView.isUserInteractionEnabled = true
         
         locationLabel.text = "현재 위치"
         locationLabel.font = .systemFont(ofSize: 14, weight: .light)
@@ -57,6 +61,7 @@ class HomeHeaderView: UIView {
         
         currentLocationImageView.image = UIImage(systemName: "chevron.down")
         currentLocationImageView.tintColor = .label
+        currentLocationImageView.isUserInteractionEnabled = true
         
         let currentStack: UIStackView = UIStackView(arrangedSubviews: [currentLocationLabel, currentLocationImageView])
         currentStack.axis = .horizontal
@@ -130,3 +135,38 @@ extension UITextField {
 }
 
 
+// MARK: - Extension: Profile, Location, Search TapGesture Setting
+extension HomeHeaderView {
+    
+    private func setupGesture() {
+        let profileTapGesture = UITapGestureRecognizer(target: self, action: #selector(profileImageViewTapped))
+        profileImageView.addGestureRecognizer(profileTapGesture)
+        
+        let locationTapGesture = UITapGestureRecognizer(target: self, action: #selector(locationImageViewTapped))
+        currentLocationImageView.addGestureRecognizer(locationTapGesture)
+        
+        searchButton.addTarget(self, action: #selector(didTappedSEarchButton), for: .touchUpInside)
+    }
+    
+    
+    @objc private func profileImageViewTapped() {
+        delegate?.didTappedProfileImage()
+    }
+    
+    @objc private func locationImageViewTapped() {
+        delegate?.didTappedLocationImage()
+    }
+    
+    @objc private func didTappedSEarchButton() {
+        let keyword = searchTextField.text ?? ""
+        delegate?.didTappedSearchButton(with: keyword)
+    }
+}
+
+
+// MARK: - Protocol: Profile, Location, Search
+protocol HomeHeaderViewDelegate: AnyObject {
+    func didTappedProfileImage()
+    func didTappedLocationImage()
+    func didTappedSearchButton(with keyword: String)
+}

@@ -55,10 +55,11 @@ extension HomeViewController {
 
         // 셀 & 헤더 등록
         collectionView.register(UICollectionViewCell.self, forCellWithReuseIdentifier: "cell")
-        collectionView.contentInset = UIEdgeInsets(top: 180, left: 0, bottom: 0, right: 0)
+        //collectionView.contentInset = UIEdgeInsets(top: 180, left: 0, bottom: 0, right: 0)
     }
     
     private func setupHeaderView() {
+        homeHeaderView.delegate = self
         view.addSubview(homeHeaderView)
         homeHeaderView.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
@@ -161,5 +162,17 @@ final class LabelCell: UICollectionViewCell {
 }
 
 
-
-
+// MARK: - Extension
+extension HomeViewController: HomeHeaderViewDelegate {
+    func didTappedProfileImage() {
+        print("✅ 프로필 창이 눌렸습니다.")
+    }
+    
+    func didTappedLocationImage() {
+        print("✅ 현재 위치 확인 이미지를 눌렀습니다.")
+    }
+    
+    func didTappedSearchButton(with keyword: String) {
+        print("✅ 현재 눌린 검색어: \(keyword)")
+    }
+}
