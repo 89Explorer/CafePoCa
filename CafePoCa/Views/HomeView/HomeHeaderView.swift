@@ -55,7 +55,6 @@ class HomeHeaderView: UIView {
         locationLabel.textColor = .label
         
         currentLocationLabel.textColor = .label
-        currentLocationLabel.text = "인천특별시, 서구"
         currentLocationLabel.font = .systemFont(ofSize: 16, weight: .semibold)
         currentLocationLabel.numberOfLines = 1
         
@@ -121,6 +120,12 @@ class HomeHeaderView: UIView {
             searchButton.heightAnchor.constraint(equalToConstant: 40)
             
         ])
+    }
+    
+    
+    // MARK: - Function
+    func configure(with currentLocationLabel: String) {
+        self.currentLocationLabel.text = currentLocationLabel
     }
 }
 
