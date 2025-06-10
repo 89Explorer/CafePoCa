@@ -19,19 +19,21 @@ class HomeHeaderView: UIView {
     private let locationImageView: UIImageView = UIImageView()
     private let currentLocationLabel: UILabel = UILabel()
     private let currentLocationImageView: UIImageView = UIImageView()
-    private let searchTextField: UITextField = UITextField()
     private let searchButton: UIButton = UIButton()
+    let searchTextField: UITextField = UITextField()
+    
     
     
     // MARK: - Init
     override init(frame: CGRect) {
         super.init(frame: frame)
-        backgroundColor = .systemGreen
+        backgroundColor = .systemYellow
         layer.cornerRadius = 28
         layer.maskedCorners = [.layerMinXMaxYCorner, .layerMaxXMaxYCorner]
         
         setupUI()
         setupGesture()
+        self.searchTextField.delegate = self
         
     }
     
@@ -78,6 +80,7 @@ class HomeHeaderView: UIView {
         searchTextField.layer.cornerRadius = 12
         searchTextField.clipsToBounds = true
         searchTextField.autocapitalizationType = .none
+        searchTextField.returnKeyType = .done
         searchTextField.setLeftPaddingPoints(14)
         
         let searchImage = UIImage(systemName: "magnifyingglass", withConfiguration: imageConfig)
@@ -167,6 +170,19 @@ extension HomeHeaderView {
         delegate?.didTappedSearchButton(with: keyword)
     }
 }
+
+
+// MARK: - Extension: UITextFieldDelegate
+extension HomeHeaderView: UITextFieldDelegate {
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        if textField == self.searchTextField {
+            let keyword = searchTextField.text ?? ""
+            delegate?.didTappedSearchButton(with: keyword)
+        }
+        return true
+    }
+}
+
 
 
 // MARK: - Protocol: Profile, Location, Search

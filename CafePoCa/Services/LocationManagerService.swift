@@ -64,7 +64,6 @@ final class LocationManagerService: NSObject, CLLocationManagerDelegate {
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard let location = locations.last else { return }
         reverseGeoCode(location: location)
-        //fetchAddressFromCoordinates(location.coordinate)
         manager.stopUpdatingLocation()
     }
     

@@ -35,7 +35,7 @@ class HomeViewController: UIViewController {
         
         setupCollectionView()
         setupHeaderView()
-        
+        hideKeyboard()
     }
     
     override func viewDidAppear(_ animated: Bool) {
@@ -43,10 +43,24 @@ class HomeViewController: UIViewController {
         checkLocation()
     }
     
+    // 상황별로 네비게이션 바 숨김처리
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        homeHeaderView.searchTextField.text = ""
+        navigationController?.setNavigationBarHidden(true, animated: animated)
+    }
+    
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        navigationController?.setNavigationBarHidden(false, animated: animated)
+    }
+    
+    
     // 상태바 숨기기
     override var prefersStatusBarHidden: Bool {
         return true
     }
+    
     
     // MARK: - Function
     private func checkLocation() {
@@ -54,7 +68,7 @@ class HomeViewController: UIViewController {
             onUpdate: { [weak self] address, coordinate in
                 print("✅ 주소: \(address)")
                 print("📍 위도: \(coordinate.latitude), 경도: \(coordinate.longitude)")
-                      
+                
                 self?.userLocation = address
                 self?.geocoder = coordinate
             },
@@ -68,6 +82,17 @@ class HomeViewController: UIViewController {
         )
     }
     
+    private func hideKeyboard() {
+        let tap: UITapGestureRecognizer = UITapGestureRecognizer(target: self,
+                                                                 action: #selector(dismissKeyboard))
+        view.addGestureRecognizer(tap)
+    }
+
+    
+    // MARK: - Action Method
+    @objc func dismissKeyboard() {
+        view.endEditing(true)
+    }
 }
 
 
@@ -152,7 +177,7 @@ extension HomeViewController {
         }
         alert.addAction(cancel)
         alert.addAction(goSetting)
-
+        
         present(alert, animated: true)
     }
     
@@ -231,6 +256,11 @@ final class LabelCell: UICollectionViewCell {
 extension HomeViewController: HomeHeaderViewDelegate {
     func didTappedProfileImage() {
         print("✅ 프로필 창이 눌렸습니다.")
+        let vc = ProfileViewController()
+        vc.modalTransitionStyle = .coverVertical
+        //vc.modalPresentationStyle = .fullScreen
+        navigationController?.pushViewController(vc, animated: true)
+        //present(vc, animated: true)
     }
     
     func didTappedLocationImage() {
@@ -253,6 +283,11 @@ extension HomeViewController: HomeHeaderViewDelegate {
     
     func didTappedSearchButton(with keyword: String) {
         print("✅ 현재 눌린 검색어: \(keyword)")
+        UIView.animate(withDuration: 0.25) {
+            self.view.endEditing(true)
+        }
+        let vc = KeywordSearchViewController(with: keyword)
+        navigationController?.pushViewController(vc, animated: true)
     }
 }
 
@@ -263,8 +298,9 @@ extension HomeViewController: LocationSearchDelegate {
         print("🎉 성공!")
         print("✅ 주소 재확인: \(address)")
         print("📍 위도 재확인: \(coordinate.latitude), 경도: \(coordinate.longitude)")
-              
+        
         self.userLocation = address
+        self.geocoder = coordinate
     }
 }
 
@@ -345,10 +381,10 @@ extension HomeViewController: LocationSearchDelegate {
 //        print("❌ 위치 정보 가져오기 실패: \(error.localizedDescription)")
 //    }
 //
-    // 위치 권한이 꺼져있는 경우 사용자 설정 유도
-    
+// 위치 권한이 꺼져있는 경우 사용자 설정 유도
+
 //
- 
+
 //
 //    // 위도와 경도를 주소로 변환하는 메서드
 //    func reverseGeocode(location: CLLocation, completion: @escaping (String?) -> Void) {
