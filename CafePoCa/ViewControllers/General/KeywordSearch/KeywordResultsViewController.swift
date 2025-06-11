@@ -43,6 +43,7 @@ class KeywordResultsViewController: UIViewController {
 }
 
 
+// MARK: - Extension: UITableViewDataSource
 extension KeywordResultsViewController: UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return results.count
@@ -51,6 +52,6 @@ extension KeywordResultsViewController: UITableViewDataSource {
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = UITableViewCell()
         cell.textLabel?.text = results[indexPath.row]
-        return cell 
+        return cell
     }
 }

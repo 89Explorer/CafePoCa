@@ -153,7 +153,7 @@ extension HomeHeaderView {
         let locationTapGesture = UITapGestureRecognizer(target: self, action: #selector(locationImageViewTapped))
         currentLocationImageView.addGestureRecognizer(locationTapGesture)
         
-        searchButton.addTarget(self, action: #selector(didTappedSEarchButton), for: .touchUpInside)
+        searchButton.addTarget(self, action: #selector(didTappedSearchButton), for: .touchUpInside)
     }
     
     
@@ -165,7 +165,7 @@ extension HomeHeaderView {
         delegate?.didTappedLocationImage()
     }
     
-    @objc private func didTappedSEarchButton() {
+    @objc private func didTappedSearchButton() {
         let keyword = searchTextField.text ?? ""
         delegate?.didTappedSearchButton(with: keyword)
     }
