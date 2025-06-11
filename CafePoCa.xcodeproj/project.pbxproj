@@ -6,8 +6,13 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		9DF2A4672DF91F10000D26E8 /* Config.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 9DF2A4662DF91F10000D26E8 /* Config.xcconfig */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		9DF2A2D82DF12F92000D26E8 /* CafePoCa.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CafePoCa.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		9DF2A4662DF91F10000D26E8 /* Config.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -45,6 +50,7 @@
 		9DF2A2CF2DF12F92000D26E8 = {
 			isa = PBXGroup;
 			children = (
+				9DF2A4662DF91F10000D26E8 /* Config.xcconfig */,
 				9DF2A2DA2DF12F92000D26E8 /* CafePoCa */,
 				9DF2A2D92DF12F92000D26E8 /* Products */,
 			);
@@ -122,6 +128,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9DF2A4672DF91F10000D26E8 /* Config.xcconfig in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -194,6 +201,7 @@
 		};
 		9DF2A2F12DF12F94000D26E8 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 9DF2A4662DF91F10000D26E8 /* Config.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;

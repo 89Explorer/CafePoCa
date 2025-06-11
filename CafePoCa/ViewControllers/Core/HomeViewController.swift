@@ -36,6 +36,17 @@ class HomeViewController: UIViewController {
         setupCollectionView()
         setupHeaderView()
         hideKeyboard()
+        
+        Task {
+            do {
+                let regionCodes = try await NetworkManager.shared.getRegionCode()
+                print("✅ 받아온 지역 코드: \(regionCodes)")
+            } catch {
+                print("❌ 지역 코드 가져오기 실패")
+            }
+        }
+        
+        
     }
     
     override func viewDidAppear(_ animated: Bool) {
