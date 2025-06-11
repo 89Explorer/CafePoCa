@@ -48,8 +48,6 @@ final class NetworkManager {
             throw URLError(.badURL)
         }
         
-        print("url 주소: \(url)")
-        
         do {
             let (data, response) = try await URLSession.shared.data(from: url)
             

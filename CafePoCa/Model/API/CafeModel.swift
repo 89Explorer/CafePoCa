@@ -5,7 +5,9 @@
 //  Created by 권정근 on 6/11/25.
 //
 
+// 카페정보 관련 데이터 모델
 import Foundation
+
 
 struct CafeWelcome: Codable {
     let response: CafeResponse

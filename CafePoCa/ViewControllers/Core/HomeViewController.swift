@@ -7,6 +7,7 @@
 
 import UIKit
 import CoreLocation
+import Combine
 
 class HomeViewController: UIViewController {
     
@@ -19,6 +20,9 @@ class HomeViewController: UIViewController {
             homeHeaderView.configure(with: userLocation ?? "주소 확인 중...")
         }
     }
+    
+    private var homeVM: HomeViewModel = HomeViewModel()
+    private var cancellables: Set<AnyCancellable> = []
     
     
     // MARK: - UI Component
@@ -37,6 +41,7 @@ class HomeViewController: UIViewController {
         setupHeaderView()
         hideKeyboard()
         fetchRegionCodes()
+        bindViewModel()
         
     }
     
@@ -310,6 +315,8 @@ extension HomeViewController: LocationSearchDelegate {
 // MARK: - Extension: API check
 extension HomeViewController {
     private func fetchRegionCodes() {
+        
+        
 //        Task {
 //            do {
 //                let codes = try await NetworkManager.shared.getRegionCode()
@@ -319,17 +326,40 @@ extension HomeViewController {
 //            }
 //        }
         
+//        Task {
+//            do {
+//                let lat: String = String(geocoder.latitude)
+//                let lon: String = String(geocoder.longitude)
+//                let cafeList = try await NetworkManager.shared.getCafeBasedLocation(mapX: lon, mapY: lat)
+//                print("✅ cafeList: \(cafeList)")
+//            } catch {
+//                print("⚠️ 에러: \(error)")
+//            }
+//        }
+        
+        let lat: String = String(geocoder.latitude)
+        let lon: String = String(geocoder.longitude)
+        
         Task {
-            do {
-                let lat: String = String(geocoder.latitude)
-                let lon: String = String(geocoder.longitude)
-                let cafeList = try await NetworkManager.shared.getCafeBasedLocation(mapX: lon, mapY: lat)
-                print("✅ cafeList: \(cafeList)")
-            } catch {
-                print("⚠️ 에러: \(error)")
-            }
+            async let region: () = homeVM.fetchRegionList()
+            async let cafeBasedLocationList: () =  homeVM.fetchCafeList(mapX: lon , mapY: lat)
+            
+            await region
+            await cafeBasedLocationList
+            
+            homeVM.makeAllSection()
         }
     }
+    
+    private func bindViewModel() {
+        homeVM.$homeTotalModel
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] items in
+                print("아이템: \(items)")
+            }
+            .store(in: &cancellables)
+    }
+    
 }
 
 // MARK: - Extension: CLLocationManagerDelegate
