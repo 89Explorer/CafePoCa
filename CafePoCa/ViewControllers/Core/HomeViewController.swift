@@ -36,16 +36,7 @@ class HomeViewController: UIViewController {
         setupCollectionView()
         setupHeaderView()
         hideKeyboard()
-        
-        Task {
-            do {
-                let regionCodes = try await NetworkManager.shared.getRegionCode()
-                print("✅ 받아온 지역 코드: \(regionCodes)")
-            } catch {
-                print("❌ 지역 코드 가져오기 실패")
-            }
-        }
-        
+        fetchRegionCodes()
         
     }
     
@@ -315,6 +306,31 @@ extension HomeViewController: LocationSearchDelegate {
     }
 }
 
+
+// MARK: - Extension: API check
+extension HomeViewController {
+    private func fetchRegionCodes() {
+//        Task {
+//            do {
+//                let codes = try await NetworkManager.shared.getRegionCode()
+//                print("📍 지역 코드 결과: \(codes)")
+//            } catch {
+//                print("⚠️ 에러: \(error)")
+//            }
+//        }
+        
+        Task {
+            do {
+                let lat: String = String(geocoder.latitude)
+                let lon: String = String(geocoder.longitude)
+                let cafeList = try await NetworkManager.shared.getCafeBasedLocation(mapX: lon, mapY: lat)
+                print("✅ cafeList: \(cafeList)")
+            } catch {
+                print("⚠️ 에러: \(error)")
+            }
+        }
+    }
+}
 
 // MARK: - Extension: CLLocationManagerDelegate
 
