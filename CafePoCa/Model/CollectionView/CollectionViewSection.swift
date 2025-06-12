@@ -16,13 +16,15 @@ struct HomeSection: Hashable {
 
 
 enum CafeSectionType: Int, CaseIterable {
-    case region
+    case headerview
     case cafe
+    case region
     
     var title: String {
         switch self {
-        case .region: return "지역카테고리"
+        case .headerview: return "헤더스페이스"
         case .cafe: return "현위치카페정보"
+        case .region: return "지역카테고리"
         }
     }
 }

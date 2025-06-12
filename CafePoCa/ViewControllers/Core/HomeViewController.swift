@@ -17,7 +17,7 @@ class HomeViewController: UIViewController {
     private var geocoder: CLLocationCoordinate2D = CLLocationCoordinate2D()
     private var userLocation: String? {
         didSet {
-            homeHeaderView.configure(with: userLocation ?? "주소 확인 중...")
+            reloadHomeHeaderSection()
         }
     }
     
@@ -26,22 +26,20 @@ class HomeViewController: UIViewController {
     
     
     // MARK: - UI Component
-    private var homeHeaderView: HomeHeaderView = HomeHeaderView()
+    //private var homeHeaderView: HomeHeaderView = HomeHeaderView()
     private var collectionView: UICollectionView!
+    private var dataSource: UICollectionViewDiffableDataSource<CafeSectionType, CafeItemType>!
     
     
     // MARK: - Life Cycle
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = .systemBackground
-        
-        //locationManager.delegate = self
-        
-        setupCollectionView()
-        setupHeaderView()
+        view.backgroundColor = .secondarySystemBackground
         hideKeyboard()
-        fetchRegionCodes()
+        setupUIComponent()
+        //fetchRegionCodes()
         bindViewModel()
+        createDataSource()
         
     }
     
@@ -53,7 +51,7 @@ class HomeViewController: UIViewController {
     // 상황별로 네비게이션 바 숨김처리
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        homeHeaderView.searchTextField.text = ""
+        //homeHeaderView.searchTextField.text = ""
         navigationController?.setNavigationBarHidden(true, animated: animated)
     }
     
@@ -64,9 +62,9 @@ class HomeViewController: UIViewController {
     
     
     // 상태바 숨기기
-    override var prefersStatusBarHidden: Bool {
-        return true
-    }
+    //    override var prefersStatusBarHidden: Bool {
+    //        return true
+    //    }
     
     
     // MARK: - Function
@@ -78,6 +76,9 @@ class HomeViewController: UIViewController {
                 
                 self?.userLocation = address
                 self?.geocoder = coordinate
+                
+                // 데이터 가져오기
+                self?.fetchRegionCodes()
             },
             onFail: { message in
                 if message == "LocationDenied" {
@@ -89,12 +90,22 @@ class HomeViewController: UIViewController {
         )
     }
     
+    private func reloadHomeHeaderSection() {
+        guard var snapshot = dataSource?.snapshot() else { return }
+        
+        // 만약 .headerview 섹션이 존재한다면, 그 섹션을 reload
+        if snapshot.sectionIdentifiers.contains(.headerview) {
+            snapshot.reloadSections([.headerview])
+            dataSource?.apply(snapshot, animatingDifferences: true)
+        }
+    }
+    
     private func hideKeyboard() {
         let tap: UITapGestureRecognizer = UITapGestureRecognizer(target: self,
                                                                  action: #selector(dismissKeyboard))
         view.addGestureRecognizer(tap)
     }
-
+    
     
     // MARK: - Action Method
     @objc func dismissKeyboard() {
@@ -106,66 +117,241 @@ class HomeViewController: UIViewController {
 // MARK: - CollectionView 설정
 extension HomeViewController {
     
-    private func setupCollectionView() {
-        let layout = createCompositionalLayout()
-        collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
+    private func setupUIComponent() {
+        collectionView = UICollectionView(frame: .zero, collectionViewLayout: createCompostionalLayout())
+        collectionView.showsVerticalScrollIndicator = false
         collectionView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-        collectionView.backgroundColor = .systemBackground
+        collectionView.backgroundColor = .clear
         collectionView.delegate = self
         collectionView.dataSource = self
         
         view.addSubview(collectionView)
+        
         collectionView.translatesAutoresizingMaskIntoConstraints = false
         
         NSLayoutConstraint.activate([
-            collectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            collectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            collectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 0),
+            collectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: 0),
             collectionView.topAnchor.constraint(equalTo: view.topAnchor),
             collectionView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
         
-        // 셀 & 헤더 등록
-        collectionView.register(UICollectionViewCell.self, forCellWithReuseIdentifier: "cell")
+        collectionView.register(CafeBasedOnCurrentLocationCell.self, forCellWithReuseIdentifier: CafeBasedOnCurrentLocationCell.reuseIdentifier)
+        collectionView.register(
+            HomeHeaderReusableView.self,
+            forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader,
+            withReuseIdentifier: HomeHeaderReusableView.reuseIdentifier
+        )
+        collectionView.register(
+            SectionHeaderView.self,
+            forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader,
+            withReuseIdentifier: SectionHeaderView.reuseIdentifier
+        )
+        collectionView.register(CategoryCell.self, forCellWithReuseIdentifier: CategoryCell.reuseIdentifier)
+        
         //collectionView.contentInset = UIEdgeInsets(top: 20, left: 0, bottom: 0, right: 0)
+        
     }
     
-    private func setupHeaderView() {
-        homeHeaderView.delegate = self
-        view.addSubview(homeHeaderView)
-        homeHeaderView.translatesAutoresizingMaskIntoConstraints = false
-        NSLayoutConstraint.activate([
-            homeHeaderView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            homeHeaderView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            homeHeaderView.topAnchor.constraint(equalTo: view.topAnchor),
-            homeHeaderView.heightAnchor.constraint(equalToConstant: 180)
-        ])
-    }
-    
-    private func createCompositionalLayout() -> UICollectionViewLayout {
-        return UICollectionViewCompositionalLayout { sectionIndex, environment in
-            let itemSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0),
-                                                  heightDimension: .absolute(80))
-            let item = NSCollectionLayoutItem(layoutSize: itemSize)
-            
-            let groupSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0),
-                                                   heightDimension: .estimated(80))
-            let group = NSCollectionLayoutGroup.vertical(layoutSize: groupSize, subitems: [item])
-            
-            let section = NSCollectionLayoutSection(group: group)
-            
-            // ✅ 헤더뷰 설정
-            let headerSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0),
-                                                    heightDimension: .absolute(160))
-            let sectionHeader = NSCollectionLayoutBoundarySupplementaryItem(
-                layoutSize: headerSize,
-                elementKind: UICollectionView.elementKindSectionHeader,
-                alignment: .top
-            )
-            section.boundarySupplementaryItems = [sectionHeader]
-            //section.contentInsets = NSDirectionalEdgeInsets(top: -10, leading: 0, bottom: 0, trailing: 0)
-            
-            return section
+    private func reloadData() {
+        
+        guard let cafeSection = homeVM.homeTotalModel.first(where: { $0.type == .cafe }) else {
+            print("⚠️ .cafe 섹션이 없습니다.")
+            return
         }
+        
+        guard let regionSection = homeVM.homeTotalModel.first(where: { $0.type == .region }) else {
+            print("⚠️ .region 섹션이 없습니다.")
+            return
+        }
+        
+        var snapshot = NSDiffableDataSourceSnapshot<CafeSectionType, CafeItemType>()
+        
+        snapshot.appendSections([.headerview, .cafe, .region])
+        snapshot.appendItems(cafeSection.item, toSection: .cafe)
+        snapshot.appendItems(regionSection.item, toSection: .region)
+        
+        dataSource.apply(snapshot, animatingDifferences: true)
+        
+    }
+    
+    private func createDataSource() {
+        dataSource = UICollectionViewDiffableDataSource<CafeSectionType, CafeItemType>(
+            collectionView: collectionView) {
+                collectionView, indexPath, item in
+                switch item {
+                case .cafe(let cafeInfo):
+                    guard let cell = collectionView.dequeueReusableCell(
+                        withReuseIdentifier: CafeBasedOnCurrentLocationCell.reuseIdentifier,
+                        for: indexPath) as? CafeBasedOnCurrentLocationCell else { return UICollectionViewCell() }
+                    cell.configure(with: cafeInfo)
+                    return cell
+                case .region(let regionInfo):
+                    guard let cell = collectionView.dequeueReusableCell(
+                        withReuseIdentifier: CategoryCell.reuseIdentifier,
+                        for: indexPath) as? CategoryCell else { return UICollectionViewCell() }
+                    cell.configure(with: regionInfo)
+                    return cell
+                }
+            }
+        
+        dataSource.supplementaryViewProvider = { collectionView, kind, indexPath in
+            let sectionType = self.dataSource.snapshot().sectionIdentifiers[indexPath.section]
+            
+            if sectionType == .headerview, kind == UICollectionView.elementKindSectionHeader {
+                guard let headerView = collectionView.dequeueReusableSupplementaryView(
+                    ofKind: kind,
+                    withReuseIdentifier: HomeHeaderReusableView.reuseIdentifier,
+                    for: indexPath
+                ) as? HomeHeaderReusableView else {
+                    return nil
+                }
+                headerView.delegate = self
+                headerView.configure(with: self.userLocation ?? "위치 확인중...")
+                return headerView
+            }
+            
+            
+            if kind == UICollectionView.elementKindSectionHeader {
+                guard let headerView = collectionView.dequeueReusableSupplementaryView(
+                    ofKind: kind,
+                    withReuseIdentifier: SectionHeaderView.reuseIdentifier,
+                    for: indexPath) as? SectionHeaderView else {
+                    return nil
+                }
+                
+                switch sectionType {
+                case .cafe:
+                    headerView.configure(with: "내 주변 카페 ☕️")
+                case .region:
+                    headerView.configure(with: "지역 구분 🌐")
+                case .headerview:
+                    headerView.configure(with: "")
+                }
+                return headerView
+            }
+            return nil
+        }
+    }
+    
+    private func createCompostionalLayout() -> UICollectionViewLayout {
+        let layout = UICollectionViewCompositionalLayout {
+            sectionIndex, environment in
+            let sectionIdentifier = CafeSectionType.allCases[sectionIndex]
+            
+            switch sectionIdentifier {
+            case .headerview:
+                return self.createHeaderSection()
+            case .cafe:
+                return self.createCafeSection()
+            case .region:
+                return self.createRegionSection()
+            }
+        }
+        
+        let config = UICollectionViewCompositionalLayoutConfiguration()
+        config.interSectionSpacing = 8
+        layout.configuration = config
+        return layout
+    }
+    
+    private func createHeaderSection() -> NSCollectionLayoutSection {
+        let itemSize = NSCollectionLayoutSize(
+            widthDimension: .fractionalWidth(0.93),
+            heightDimension: .absolute(1))
+        let layoutItem = NSCollectionLayoutItem(layoutSize: itemSize)
+        //layoutItem.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 12, bottom: 0, trailing: 12)
+        let layoutGroupSize = NSCollectionLayoutSize(
+            widthDimension: .fractionalWidth(0.93),
+            heightDimension: .absolute(1)
+        )
+        let layoutGroup = NSCollectionLayoutGroup.vertical(layoutSize: layoutGroupSize, subitems: [layoutItem])
+        let section = NSCollectionLayoutSection(group: layoutGroup)
+        section.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 12, bottom: 0, trailing: 12)
+        
+        let headerSize = NSCollectionLayoutSize(
+            widthDimension: .fractionalWidth(1.0),
+            heightDimension: .estimated(140))
+        
+        let header = NSCollectionLayoutBoundarySupplementaryItem(
+            layoutSize: headerSize,
+            elementKind: UICollectionView.elementKindSectionHeader,
+            alignment: .top)
+        
+        section.boundarySupplementaryItems = [header]
+        return section
+        
+    }
+    
+    private func createCafeSection() -> NSCollectionLayoutSection {
+        let itemSize = NSCollectionLayoutSize(
+            widthDimension: .fractionalWidth(0.93),
+            heightDimension: .absolute(350.0))
+        
+        let layoutItem = NSCollectionLayoutItem(layoutSize: itemSize)
+        layoutItem.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 4)
+        
+        let layoutGroupSize = NSCollectionLayoutSize(
+            widthDimension: .fractionalWidth(0.93),
+            heightDimension: .absolute(350.0)
+        )
+        
+        let layoutGroup = NSCollectionLayoutGroup.horizontal(
+            layoutSize: layoutGroupSize,
+            subitems: [layoutItem]
+        )
+        
+        let layoutSection = NSCollectionLayoutSection(group: layoutGroup)
+        layoutSection.orthogonalScrollingBehavior = .groupPagingCentered
+        layoutSection.contentInsets = NSDirectionalEdgeInsets(top: 12, leading: 0, bottom: 0, trailing: 0)
+
+        let layoutSectionHeader = createSectionHeader()
+        layoutSection.boundarySupplementaryItems = [layoutSectionHeader]
+        
+        return layoutSection
+    }
+    
+    private func createRegionSection() -> NSCollectionLayoutSection {
+        let itemSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(0.97 / 2.0), heightDimension: .fractionalHeight(1.0))
+        
+        let layoutItem = NSCollectionLayoutItem(layoutSize: itemSize)
+        layoutItem.contentInsets = NSDirectionalEdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4)
+        
+        let horizontalGroupSize = NSCollectionLayoutSize(
+            widthDimension: .fractionalWidth(1.0),
+            heightDimension: .absolute(45)
+        )
+        
+        let horizontalGroup = NSCollectionLayoutGroup.horizontal(
+            layoutSize: horizontalGroupSize,
+            subitems: [layoutItem, layoutItem] )
+        
+        let verticalGroupSize = NSCollectionLayoutSize(
+            widthDimension: .fractionalWidth(0.93),
+            heightDimension: .estimated(150)
+        )
+        
+        let verticalGroup = NSCollectionLayoutGroup.vertical(
+            layoutSize: verticalGroupSize,
+            subitems: [horizontalGroup, horizontalGroup, horizontalGroup]
+        )
+        
+        
+        let layoutSection = NSCollectionLayoutSection(group: verticalGroup)
+        layoutSection.orthogonalScrollingBehavior = UICollectionLayoutSectionOrthogonalScrollingBehavior.groupPagingCentered
+        layoutSection.boundarySupplementaryItems = [createSectionHeader()]
+        layoutSection.contentInsets = NSDirectionalEdgeInsets(top: 12, leading: 0, bottom: 0, trailing: 0)
+        return layoutSection
+    }
+
+    
+    private func createSectionHeader() -> NSCollectionLayoutBoundarySupplementaryItem {
+        let layoutSectionHeaderSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(0.93), heightDimension: .estimated(80))
+        let layoutSectionHeader = NSCollectionLayoutBoundarySupplementaryItem(
+            layoutSize: layoutSectionHeaderSize,
+            elementKind: UICollectionView.elementKindSectionHeader,
+            alignment: .top)
+        return layoutSectionHeader
     }
     
     func showRequestLocationServiceAlert() {
@@ -216,17 +402,17 @@ extension HomeViewController: UICollectionViewDataSource, UICollectionViewDelega
 
 
 // MARK: - UIScrollViewDelegate
-extension HomeViewController: UIScrollViewDelegate {
-    func scrollViewDidScroll(_ scrollView: UIScrollView) {
-        let yOffset = scrollView.contentOffset.y
-        
-        if yOffset > 0 {
-            homeHeaderView.transform = CGAffineTransform(translationX: 0, y: -yOffset)
-        } else {
-            homeHeaderView.transform = .identity
-        }
-    }
-}
+//extension HomeViewController: UIScrollViewDelegate {
+//    func scrollViewDidScroll(_ scrollView: UIScrollView) {
+//        let yOffset = scrollView.contentOffset.y
+//
+//        if yOffset > 0 {
+//            homeHeaderView.transform = CGAffineTransform(translationX: 0, y: -yOffset)
+//        } else {
+//            homeHeaderView.transform = .identity
+//        }
+//    }
+//}
 
 
 // MARK: - 셀 클래스
@@ -316,27 +502,6 @@ extension HomeViewController: LocationSearchDelegate {
 extension HomeViewController {
     private func fetchRegionCodes() {
         
-        
-//        Task {
-//            do {
-//                let codes = try await NetworkManager.shared.getRegionCode()
-//                print("📍 지역 코드 결과: \(codes)")
-//            } catch {
-//                print("⚠️ 에러: \(error)")
-//            }
-//        }
-        
-//        Task {
-//            do {
-//                let lat: String = String(geocoder.latitude)
-//                let lon: String = String(geocoder.longitude)
-//                let cafeList = try await NetworkManager.shared.getCafeBasedLocation(mapX: lon, mapY: lat)
-//                print("✅ cafeList: \(cafeList)")
-//            } catch {
-//                print("⚠️ 에러: \(error)")
-//            }
-//        }
-        
         let lat: String = String(geocoder.latitude)
         let lon: String = String(geocoder.longitude)
         
@@ -355,126 +520,11 @@ extension HomeViewController {
         homeVM.$homeTotalModel
             .receive(on: DispatchQueue.main)
             .sink { [weak self] items in
-                print("아이템: \(items)")
+                self?.reloadData()
+                //print(items)
+                
             }
             .store(in: &cancellables)
     }
     
 }
-
-// MARK: - Extension: CLLocationManagerDelegate
-
-
-//extension HomeViewController: CLLocationManagerDelegate {
-//
-//    /*
-//    func checkUserDeviceLocationServiceAuthorization() {
-//        // 1. 디바이스 차원의 위치 서비스가 켜져 있는지 확인
-//        guard CLLocationManager.locationServicesEnabled() else {
-//            showRequestLocationServiceAlert()
-//            return
-//        }
-//
-//        // 2. 위치 권한 요청 (결과는 delegate 메서드에서 처리)
-//        locationManager.desiredAccuracy = kCLLocationAccuracyBest
-//        locationManager.requestWhenInUseAuthorization()
-//    }
-//    */
-//
-//    // iOS 14 이상 권한 변경 감지 콜백
-//    func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
-//        handleAuthorizationStatus(manager.authorizationStatus)
-//    }
-//
-//    // iOS 14 미만 권한 변경 감지 콜백
-//    func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
-//        handleAuthorizationStatus(status)
-//    }
-//
-//    // 실제 권한 상태에 따라 분기 처리하는 함수
-//    private func handleAuthorizationStatus(_ status: CLAuthorizationStatus) {
-//        switch status {
-//        case .notDetermined:
-//            // 사용자가 아직 권한 선택을 하지 않은 상태 (다시 request 요청함)
-//            locationManager.desiredAccuracy = kCLLocationAccuracyBest
-//            locationManager.requestWhenInUseAuthorization()
-//
-//        case .restricted, .denied:
-//            // 설정에서 위치 권한을 꺼뒀거나 제한된 경우
-//            showRequestLocationServiceAlert()
-//
-//        case .authorizedWhenInUse, .authorizedAlways:
-//            // 권한이 허용된 상태 → 위치 정보 요청
-//            locationManager.startUpdatingLocation()
-//
-//        default:
-//            print("Unhandled status: \(status.rawValue)")
-//        }
-//    }
-//
-//    // 위치 업데이트 콜백
-//    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-//        guard let location = locations.last else { return }
-//        if let coordinate = locations.last?.coordinate {
-//            // ⭐️ 사용자 위치 정보 활용
-//            print("사용자 위치: \(coordinate.latitude), \(coordinate.longitude)")
-//
-//            reverseGeocode(location: location) { [weak self] address in
-//                guard let self = self else { return }
-//                if let address = address {
-//                    print("✅ 변환주소: \(address)")
-//                    homeHeaderView.configure(with: address)
-//
-//                } else {
-//                    print("⚠️ 주소 변환 실패")
-//                }
-//            }
-//        }
-//        locationManager.stopUpdatingLocation()
-//    }
-//
-//    // 위치 요청 실패 콜백
-//    func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
-//        print("❌ 위치 정보 가져오기 실패: \(error.localizedDescription)")
-//    }
-//
-// 위치 권한이 꺼져있는 경우 사용자 설정 유도
-
-//
-
-//
-//    // 위도와 경도를 주소로 변환하는 메서드
-//    func reverseGeocode(location: CLLocation, completion: @escaping (String?) -> Void) {
-//        geocoder.reverseGeocodeLocation(location) { (placemarks, error) in
-//            if let error = error {
-//                print("Reverse geocoding failed: \(error.localizedDescription)")
-//                completion(nil) // 에러가 발생한 경우 nil을 반환
-//                return
-//            }
-//
-//            guard let placemark = placemarks?.first else {
-//                print("No placemark found")
-//                completion(nil) // placemark가 없는 경우 nil을 반환
-//                return
-//            }
-//
-//            // 지번 주소 구성
-//            // let country = placemark.country ?? ""
-//            let administrativeArea = placemark.administrativeArea ?? ""
-//            let locality = placemark.locality ?? ""
-//            let subLocality = placemark.subLocality ?? ""
-//            // thoroughfare와 subThoroughfare는 생략
-//
-//            let jibunAddress = "\(administrativeArea) \(locality)"
-//
-//            // userLocation에 값을 할당
-//            self.userLocation = jibunAddress
-//
-//            // 완료된 후 jibunAddress를 completion handler로 전달
-//            completion(jibunAddress)
-//        }
-//    }
-//}
-
-
-

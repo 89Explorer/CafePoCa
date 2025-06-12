@@ -1,5 +1,5 @@
 //
-//  HomeHeaderView.swift
+//  HomeHeaderReusableView.swift
 //  CafePoCa
 //
 //  Created by 권정근 on 6/5/25.
@@ -7,10 +7,11 @@
 
 import UIKit
 
-class HomeHeaderView: UIView {
+class HomeHeaderReusableView: UICollectionReusableView {
     
     // MARK: - Variable
     weak var delegate: HomeHeaderViewDelegate?
+    static let reuseIdentifier: String = "HomeHeaderReusableView"
         
     
     // MARK: - UI Component
@@ -27,9 +28,14 @@ class HomeHeaderView: UIView {
     // MARK: - Init
     override init(frame: CGRect) {
         super.init(frame: frame)
-        backgroundColor = .systemYellow
-        layer.cornerRadius = 28
-        layer.maskedCorners = [.layerMinXMaxYCorner, .layerMaxXMaxYCorner]
+        backgroundColor = .systemBackground
+        layer.cornerRadius = 16
+        layer.shadowColor = UIColor.systemGray.cgColor
+        layer.shadowOpacity = 1.0
+        layer.shadowOffset = CGSize(width: 0, height: 8)
+        layer.shadowRadius = 8.0
+        layer.masksToBounds = false
+        //layer.maskedCorners = [.layerMinXMaxYCorner, .layerMaxXMaxYCorner]
         
         setupUI()
         setupGesture()
@@ -103,12 +109,12 @@ class HomeHeaderView: UIView {
         NSLayoutConstraint.activate([
             
             profileImageView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 20),
-            profileImageView.topAnchor.constraint(equalTo: safeAreaLayoutGuide.topAnchor, constant: 0),
+            profileImageView.topAnchor.constraint(equalTo: safeAreaLayoutGuide.topAnchor, constant: 20),
             profileImageView.heightAnchor.constraint(equalToConstant: 40),
             profileImageView.widthAnchor.constraint(equalToConstant: 40),
             
             locationStack.centerXAnchor.constraint(equalTo: centerXAnchor),
-            locationStack.topAnchor.constraint(equalTo: safeAreaLayoutGuide.topAnchor, constant: 0),
+            locationStack.topAnchor.constraint(equalTo: safeAreaLayoutGuide.topAnchor, constant: 20),
             locationStack.leadingAnchor.constraint(equalTo: profileImageView.trailingAnchor, constant: 12),
             locationStack.heightAnchor.constraint(equalToConstant: 40),
             
@@ -144,7 +150,7 @@ extension UITextField {
 
 
 // MARK: - Extension: Profile, Location, Search TapGesture Setting
-extension HomeHeaderView {
+extension HomeHeaderReusableView {
     
     private func setupGesture() {
         let profileTapGesture = UITapGestureRecognizer(target: self, action: #selector(profileImageViewTapped))
@@ -173,7 +179,7 @@ extension HomeHeaderView {
 
 
 // MARK: - Extension: UITextFieldDelegate
-extension HomeHeaderView: UITextFieldDelegate {
+extension HomeHeaderReusableView: UITextFieldDelegate {
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
         if textField == self.searchTextField {
             let keyword = searchTextField.text ?? ""

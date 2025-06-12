@@ -81,6 +81,9 @@ final class NetworkManager {
             URLQueryItem(name: "mapX", value: "\(mapX)"),
             URLQueryItem(name: "mapY", value: "\(mapY)"),
             URLQueryItem(name: "radius", value: "\(radius)"),
+            URLQueryItem(name: "cat1", value: "A05"),
+            URLQueryItem(name: "cat2", value: "A0502"),
+            URLQueryItem(name: "cat3", value: "A05020900"),
             URLQueryItem(name: "contentTypeId", value: "39") // 음식점
         ]
         
